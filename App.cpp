@@ -6,11 +6,24 @@ using uint = unsigned int;
 
 int main()
 {
-    size_t n = 50;
-    double c = 5;
+    size_t n = 10;
+    double c = 1;
     long double p = (c * log(n)) / n;
-    DirectedGraph g = DirectedGraph::generate(n, p);
+    ListsGraph g = generateGraph<ListsGraph>(n, p);
 
+    std::cout << g.toAdjListsString() << std::endl;
+    std::cout << g.toAdjMatrixString() << std::endl;
+
+    g.deleteNode(8);
+
+    std::cout << "After deleting node 8: " << std::endl;
+    std::cout << g.toAdjListsString() << std::endl;
+    std::cout << g.toAdjMatrixString() << std::endl;
+
+    g.deleteNode(6);
+
+    std::cout << "After deleting node 6: " << std::endl;
+    std::cout << g.toAdjListsString() << std::endl;
     std::cout << g.toAdjMatrixString() << std::endl;
 
     return 0;

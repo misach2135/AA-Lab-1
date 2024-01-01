@@ -7,68 +7,149 @@
 #include <set>
 #include <string>
 #include <queue>
+#include <type_traits>
 #include <random>
 #include <array>
 
 using uint = unsigned int;
 
-class Graph
+class IGraphOperations
 {
 public:
-	virtual ~Graph();
+	virtual ~IGraphOperations();
 
 	virtual size_t addVertex() = 0;									// must return vertex id in data structure
 	virtual void addEdge(size_t vert1, size_t vert2) = 0;           // edge builds out of vertex id's
 	virtual void deleteEdge(size_t vert1, size_t vert2) = 0;
 	virtual void deleteNode(size_t vert) = 0;
+	virtual void transpose() = 0; // Лекція 25
+	virtual std::vector<size_t> dfs(size_t vert) = 0; // DFSEnumeration = 24-1
+};
 
+class IGraphRepresentation
+{
+public:
 	virtual std::string toAdjListsString() = 0;
 	virtual std::string toAdjMatrixString() = 0;
 };
 
-class UndirectedGraph : public Graph
+class AdjencyListsGraphRepresentation : public IGraphRepresentation
 {
-private:
-	size_t vertexCount;
-	std::map < size_t, std::list <size_t> > vertices;
-public:
-	UndirectedGraph();
-	UndirectedGraph(size_t verts);
+protected:
+	struct Vertex {
+		std::list<size_t> neighbors;
+		Vertex();
+	};
 
-	// Inherited via Graph
+	std::vector <Vertex> vertices;
+public:
+	AdjencyListsGraphRepresentation();
+	AdjencyListsGraphRepresentation(const std::vector <std::vector<size_t> >& matrix);
+
+	// Inherited via GraphRepresentation
+	std::string toAdjListsString() override;
+	std::string toAdjMatrixString() override;
+};
+
+class AdjencyMatrixGraphRepresentation : public IGraphRepresentation
+{
+protected:
+	std::vector <std::vector<size_t>> matrix;
+public:
+	AdjencyMatrixGraphRepresentation();
+	AdjencyMatrixGraphRepresentation(const std::vector<std::list <size_t> >& lists);
+
+	// Inherited via GraphRepresentation
+	std::string toAdjListsString() override;
+	std::string toAdjMatrixString() override;
+};
+
+class ListsGraph : public IGraphOperations, public AdjencyListsGraphRepresentation
+{
+public:
+	ListsGraph();
+	ListsGraph(size_t verts);
+
 	size_t addVertex() override;
 	void addEdge(size_t vert1, size_t vert2) override;
 	void deleteEdge(size_t vert1, size_t vert2) override;
 	void deleteNode(size_t vert) override;
 
-	// Inherited via Graph
-	std::string toAdjListsString() override;
-	std::string toAdjMatrixString() override;
-
-	static UndirectedGraph generate(size_t n, double p);
 };
 
-class DirectedGraph : public Graph
+class DListsGraph : public IGraphOperations, public AdjencyListsGraphRepresentation
 {
-private:
-	size_t vertexCount;
-	std::map < size_t, std::list <size_t> > vertices;
 public:
-	DirectedGraph();
-	DirectedGraph(size_t verts);
+	DListsGraph();
+	DListsGraph(size_t verts);
 
-	// Inherited via Graph
 	size_t addVertex() override;
 	void addEdge(size_t vert1, size_t vert2) override;
 	void deleteEdge(size_t vert1, size_t vert2) override;
 	void deleteNode(size_t vert) override;
 
-	// Inherited via Graph
-	std::string toAdjListsString() override;
-	std::string toAdjMatrixString() override;
-
-	static DirectedGraph generate(size_t n, double p);
 };
 
+class MatrixGraph : public IGraphOperations, public AdjencyMatrixGraphRepresentation
+{
+public:
+	// Inherited via IGraphOperations
+	size_t addVertex() override;
+	void addEdge(size_t vert1, size_t vert2) override;
+	void deleteEdge(size_t vert1, size_t vert2) override;
+	void deleteNode(size_t vert) override;
+};
+
+class DMatrixGraph : public IGraphOperations, public AdjencyMatrixGraphRepresentation
+{
+public:
+	// Inherited via IGraphOperations
+	size_t addVertex() override;
+	void addEdge(size_t vert1, size_t vert2) override;
+	void deleteEdge(size_t vert1, size_t vert2) override;
+	void deleteNode(size_t vert) override;
+};
+
+template<typename T>
+T generateGraph(size_t n, long double p)
+{
+	static_assert(std::is_base_of<IGraphOperations, T>::value);
+
+	T g(n);
+	if (p <= 0)
+	{
+		return T(n);
+	}
+	if (p >= 1)
+	{
+		for (size_t i = 0; i < n; i++)
+		{
+			for (size_t j = 0; j < n; j++)
+			{
+				if (i == j) continue;
+				g.addEdge(i, j);
+			}
+		}
+		return g;
+	}
+
+	std::random_device dev;
+	std::mt19937 rng(dev());
+
+	for (size_t i = 0; i < n; i++)
+	{
+		for (size_t j = 0; j < n; j++)
+		{
+			if (i == j) continue;
+
+			if (std::uniform_real_distribution<double>(0, 1)(rng) < p)
+			{
+				g.addEdge(i, j);
+			}
+		}
+	}
+
+	return g;
+}
 
 #endif

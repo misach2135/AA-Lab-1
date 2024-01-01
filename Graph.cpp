@@ -1,15 +1,15 @@
 #include "Graph.h"
 
-Graph::~Graph()
+IGraphOperations::~IGraphOperations()
 {
 }
 
-UndirectedGraph::UndirectedGraph()
+ListsGraph::ListsGraph()
 {
-	vertexCount = 0;
+	vertices.clear();
 }
 
-UndirectedGraph::UndirectedGraph(size_t verts)
+ListsGraph::ListsGraph(size_t verts)
 {
 	for (size_t i = 0; i < verts; i++)
 	{
@@ -17,143 +17,72 @@ UndirectedGraph::UndirectedGraph(size_t verts)
 	}
 }
 
-size_t UndirectedGraph::addVertex()
+size_t ListsGraph::addVertex()
 {
-	vertices[vertexCount] = std::list<size_t>();
-	vertexCount++;
-	return vertexCount - 1;
+		vertices.push_back(Vertex());
+		return vertices.size() - 1;
 }
 
-void UndirectedGraph::addEdge(size_t vert1, size_t vert2)
+void ListsGraph::addEdge(size_t vert1, size_t vert2)
 {
-	if (vertices.find(vert1) == vertices.end()) return;
-	if (vertices.find(vert2) == vertices.end()) return;
+	if (vert1 >= vertices.size()) return;
+	if (vert2 >= vertices.size()) return;
 
-	vertices[vert1].push_back(vert2);
-	vertices[vert2].push_back(vert1);
-
+	vertices[vert1].neighbors.push_back(vert2);
+	vertices[vert2].neighbors.push_back(vert1);
 }
 
-void UndirectedGraph::deleteEdge(size_t vert1, size_t vert2)
+void ListsGraph::deleteEdge(size_t vert1, size_t vert2)
 {
-	if (vertices.find(vert1) == vertices.end()) return;
-	if (vertices.find(vert2) == vertices.end()) return;
+	if (vert1 >= vertices.size()) return;
+	if (vert2 >= vertices.size()) return;
 
-	for (auto i = vertices[vert1].begin(); i != vertices[vert1].end(); i++)
+	for (auto i = vertices[vert1].neighbors.begin(); i != vertices[vert1].neighbors.end(); i++)
 	{
 		if (*i == vert2)
 		{
-			vertices[vert1].erase(i);
+			vertices[vert1].neighbors.erase(i);
 			break;
 		}
 	}
 
-	for (auto i = vertices[vert2].begin(); i != vertices[vert2].end(); i++)
+	for (auto i = vertices[vert2].neighbors.begin(); i != vertices[vert2].neighbors.end(); i++)
 	{
 		if (*i == vert1)
 		{
-			vertices[vert2].erase(i);
+			vertices[vert2].neighbors.erase(i);
 			break;
 		}
 	}
 }
 
-void UndirectedGraph::deleteNode(size_t vert)
+void ListsGraph::deleteNode(size_t vert)
 {
-	if (vertices.find(vert) == vertices.end()) return;
-	
-	vertices.erase(vert);
+	if (vert >= vertices.size()) return;
 
-	for (auto& kv : vertices)
+	vertices.erase(vertices.begin() + vert);
+
+		// Remove the deleted vertex from neighbor lists and update indices
+	for (auto& v : vertices)
 	{
-		for (auto i = kv.second.begin(); i != kv.second.end(); i++)
+		v.neighbors.remove(vert);
+
+		for (auto& neighbor : v.neighbors)
 		{
-			if (*i == vert)
+			if (neighbor > vert)
 			{
-				kv.second.erase(i);
-				break;
+				neighbor--;
 			}
 		}
 	}
 }
 
-std::string UndirectedGraph::toAdjListsString()
+DListsGraph::DListsGraph()
 {
-	std::string res;
-	for (const auto& kv : vertices)
-	{
-		res.append(std::to_string(kv.first) + "-> ");
-		for (const auto& v : kv.second)
-		{
-			res.append(std::to_string(v) + " ");
-		}
-		res.append("\n");
-	}
-	return res;
+	vertices.clear();
 }
 
-std::string UndirectedGraph::toAdjMatrixString()
-{
-	std::string res;
-	for (const auto& kv : vertices)
-	{
-		for (size_t i = 0; i < this->vertexCount; i++)
-		{
-			if (std::find(kv.second.begin(), kv.second.end(), i) != kv.second.end())
-			{
-				res += "1 ";
-				continue;
-			}
-			res += "0 ";
-		}
-		res += '\n';
-	}
-	return res;
-}
-
-UndirectedGraph UndirectedGraph::generate(size_t n, double p)
-{
-	UndirectedGraph g(n);
-	if (p <= 0)
-	{
-		return UndirectedGraph(n);
-	}
-	if (p >= 1)
-	{
-		for (size_t i = 0; i < n; i++)
-		{
-			for (size_t j = i + 1; j < n; j++)
-			{
-				g.addEdge(i, j);
-			}
-		}
-		return g;
-	}
-	
-	std::random_device dev;
-	std::mt19937 rng(dev());
-
-	for (size_t i = 0; i < n; i++)
-	{
-		for (size_t j = i + 1; j < n; j++)
-		{
-			if (std::uniform_real_distribution<double>(0, 1)(rng) < p)
-			{
-				g.addEdge(i, j);
-			}
-		}
-	}
-
-	return g;
-
-}
-
-DirectedGraph::DirectedGraph()
-{
-	vertexCount = 0;
-}
-
-DirectedGraph::DirectedGraph(size_t verts)
+DListsGraph::DListsGraph(size_t verts)
 {
 	for (size_t i = 0; i < verts; i++)
 	{
@@ -161,79 +90,91 @@ DirectedGraph::DirectedGraph(size_t verts)
 	}
 }
 
-size_t DirectedGraph::addVertex()
+size_t DListsGraph::addVertex()
 {
-	vertices[vertexCount] = std::list<size_t>();
-	vertexCount++;
-	return vertexCount - 1;
+	vertices.push_back(Vertex());
+	return vertices.size() - 1;
 }
 
-void DirectedGraph::addEdge(size_t vert1, size_t vert2)
+void DListsGraph::addEdge(size_t vert1, size_t vert2)
 {
-	if (vertices.find(vert1) == vertices.end()) return;
-	if (vertices.find(vert2) == vertices.end()) return;
+	if (vert1 >= vertices.size()) return;
+	if (vert2 >= vertices.size()) return;
 
-	vertices[vert1].push_back(vert2);
+	vertices[vert1].neighbors.push_back(vert2);
 }
 
-void DirectedGraph::deleteEdge(size_t vert1, size_t vert2)
+void DListsGraph::deleteEdge(size_t vert1, size_t vert2)
 {
-	if (vertices.find(vert1) == vertices.end()) return;
-	if (vertices.find(vert2) == vertices.end()) return;
+	if (vert1 >= vertices.size()) return;
+	if (vert2 >= vertices.size()) return;
 
-	for (auto i = vertices[vert1].begin(); i != vertices[vert1].end(); i++)
+	for (auto i = vertices[vert1].neighbors.begin(); i != vertices[vert1].neighbors.end(); i++)
 	{
 		if (*i == vert2)
 		{
-			vertices[vert1].erase(i);
+			vertices[vert1].neighbors.erase(i);
 			break;
 		}
 	}
 
 }
 
-void DirectedGraph::deleteNode(size_t vert)
+void DListsGraph::deleteNode(size_t vert)
 {
-	if (vertices.find(vert) == vertices.end()) return;
+	if (vert >= vertices.size()) return;
 
-	vertices.erase(vert);
+	vertices.erase(vertices.begin() + vert);
 
-	for (auto& kv : vertices)
+	// ¬идал€ю кожну згадку в списках сум≥жност≥ про вузол vert
+	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		for (auto i = kv.second.begin(); i != kv.second.end(); i++)
+		vertices[i].neighbors.remove(vert);
+
+		for (auto& v : vertices[i].neighbors)
 		{
-			if (*i == vert)
+			if (v >= vert)
 			{
-				kv.second.erase(i);
-				break;
+				v--;
 			}
 		}
 	}
+
 }
 
-std::string DirectedGraph::toAdjListsString()
+AdjencyListsGraphRepresentation::AdjencyListsGraphRepresentation()
+{
+	vertices = std::vector<Vertex>();
+}
+
+AdjencyListsGraphRepresentation::AdjencyListsGraphRepresentation(const std::vector<std::vector<size_t>>& matrix)
+{
+	// TODO
+}
+
+std::string AdjencyListsGraphRepresentation::toAdjListsString()
 {
 	std::string res;
-	for (const auto& kv : vertices)
+	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		res.append(std::to_string(kv.first) + "-> ");
-		for (const auto& v : kv.second)
+		res.append(std::to_string(i)+ "-> ");
+		for (const auto& n : vertices[i].neighbors)
 		{
-			res.append(std::to_string(v) + " ");
+			res.append(std::to_string(n) + " ");
 		}
 		res.append("\n");
 	}
 	return res;
 }
 
-std::string DirectedGraph::toAdjMatrixString()
+std::string AdjencyListsGraphRepresentation::toAdjMatrixString()
 {
 	std::string res;
-	for (const auto& kv : vertices)
+	for (const auto& v : vertices)
 	{
-		for (size_t i = 0; i < this->vertexCount; i++)
+		for (size_t i = 0; i < vertices.size(); i++)
 		{
-			if (std::find(kv.second.begin(), kv.second.end(), i) != kv.second.end())
+			if (std::find(v.neighbors.begin(), v.neighbors.end(), i) != v.neighbors.end())
 			{
 				res += "1 ";
 				continue;
@@ -245,41 +186,61 @@ std::string DirectedGraph::toAdjMatrixString()
 	return res;
 }
 
-DirectedGraph DirectedGraph::generate(size_t n, double p)
+AdjencyMatrixGraphRepresentation::AdjencyMatrixGraphRepresentation()
 {
-	DirectedGraph g(n);
-	if (p <= 0)
-	{
-		return DirectedGraph(n);
-	}
-	if (p >= 1)
-	{
-		for (size_t i = 0; i < n; i++)
-		{
-			for (size_t j = 0; j < n; j++)
-			{
-				if (i == j) continue;
-				g.addEdge(i, j);
-			}
-		}
-		return g;
-	}
+	matrix = std::vector <std::vector<size_t>>(0);
+}
 
-	std::random_device dev;
-	std::mt19937 rng(dev());
+AdjencyMatrixGraphRepresentation::AdjencyMatrixGraphRepresentation(const std::vector<std::list<size_t>>& lists)
+{
+	// TODO
+}
 
-	for (size_t i = 0; i < n; i++)
-	{
-		for (size_t j = 0; j < n; j++)
-		{
-			if (i == j) continue;
+std::string AdjencyMatrixGraphRepresentation::toAdjListsString()
+{
+	return std::string();
+}
 
-			if (std::uniform_real_distribution<double>(0, 1)(rng) < p)
-			{
-				g.addEdge(i, j);
-			}
-		}
-	}
+std::string AdjencyMatrixGraphRepresentation::toAdjMatrixString()
+{
+	return std::string();
+}
 
-	return g;
+size_t MatrixGraph::addVertex()
+{
+	return size_t();
+}
+
+void MatrixGraph::addEdge(size_t vert1, size_t vert2)
+{
+}
+
+void MatrixGraph::deleteEdge(size_t vert1, size_t vert2)
+{
+}
+
+void MatrixGraph::deleteNode(size_t vert)
+{
+}
+
+size_t DMatrixGraph::addVertex()
+{
+	return size_t();
+}
+
+void DMatrixGraph::addEdge(size_t vert1, size_t vert2)
+{
+}
+
+void DMatrixGraph::deleteEdge(size_t vert1, size_t vert2)
+{
+}
+
+void DMatrixGraph::deleteNode(size_t vert)
+{
+}
+
+AdjencyListsGraphRepresentation::Vertex::Vertex()
+{
+	neighbors = std::list<size_t>();
 }
