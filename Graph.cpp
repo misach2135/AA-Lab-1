@@ -2,101 +2,210 @@
 
 Graph::~Graph()
 {
-	for (int i = 0; i < adjList.size(); i++)
+}
+
+UndirectedGraph::UndirectedGraph()
+{
+	vertexCount = 0;
+}
+
+UndirectedGraph::UndirectedGraph(size_t verts)
+{
+	for (size_t i = 0; i < verts; i++)
 	{
-		// delete adjList[i].data;
-		adjList[i].data = nullptr;
+		addVertex();
 	}
 }
 
-std::list<unsigned int> Graph::bfs(unsigned int s)
+size_t UndirectedGraph::addVertex()
 {
-	if (s < adjList.size())
+	vertices[vertexCount] = std::list<size_t>();
+	vertexCount++;
+	return vertexCount - 1;
+}
+
+void UndirectedGraph::addEdge(size_t vert1, size_t vert2)
+{
+	if (vertices.find(vert1) == vertices.end()) return;
+	if (vertices.find(vert2) == vertices.end()) return;
+
+	vertices[vert1].push_back(vert2);
+	vertices[vert2].push_back(vert1);
+
+}
+
+void UndirectedGraph::deleteEdge(size_t vert1, size_t vert2)
+{
+	if (vertices.find(vert1) == vertices.end()) return;
+	if (vertices.find(vert2) == vertices.end()) return;
+
+	for (auto i = vertices[vert1].begin(); i != vertices[vert1].end(); i++)
 	{
-		std::queue<unsigned int> q;
-		std::list<unsigned int> searchedNodes;
-		std::set<unsigned int> visited;
-		q.push(s);
-		while (!q.empty())
+		if (*i == vert2)
 		{
-			searchedNodes.push_back(q.front());
-			visited.insert(q.front());
-			q.pop();
-			for (unsigned int node : adjList[searchedNodes.back()].vertices)
+			vertices[vert1].erase(i);
+			break;
+		}
+	}
+
+	for (auto i = vertices[vert2].begin(); i != vertices[vert2].end(); i++)
+	{
+		if (*i == vert1)
+		{
+			vertices[vert2].erase(i);
+			break;
+		}
+	}
+}
+
+void UndirectedGraph::deleteNode(size_t vert)
+{
+	if (vertices.find(vert) == vertices.end()) return;
+	
+	vertices.erase(vert);
+
+	for (auto& kv : vertices)
+	{
+		for (auto i = kv.second.begin(); i != kv.second.end(); i++)
+		{
+			if (*i == vert)
 			{
-				if (visited.find(node) != visited.end())
-				{
-					continue;
-				}
-				q.push(node);
+				kv.second.erase(i);
+				break;
 			}
 		}
-
-		return searchedNodes;
 	}
+}
+
+std::string UndirectedGraph::toAdjListsString()
+{
+	std::string res;
+	for (const auto& kv : vertices)
+	{
+		res.append(std::to_string(kv.first) + "-> ");
+		for (const auto& v : kv.second)
+		{
+			res.append(std::to_string(v) + " ");
+		}
+		res.append("\n");
+	}
+	return res;
+}
+
+std::string UndirectedGraph::toAdjMatrixString()
+{
+	std::string res;
+	for (const auto& kv : vertices)
+	{
+		for (size_t i = 0; i < this->vertexCount; i++)
+		{
+			if (std::find(kv.second.begin(), kv.second.end(), i) != kv.second.end())
+			{
+				res += "1 ";
+				continue;
+			}
+			res += "0 ";
+		}
+		res += '\n';
+	}
+	return res;
 }
 
 DirectedGraph::DirectedGraph()
 {
+	vertexCount = 0;
 }
 
-int DirectedGraph::addNode(const char* data)
+DirectedGraph::DirectedGraph(size_t verts)
 {
-	Node newNode = {
-		data,
-		std::list<unsigned int>()
-	};
-	adjList.push_back(newNode);
-	return adjList.size() - 1;
-}
-
-void DirectedGraph::addEdge(unsigned int nodeA, unsigned int nodeB)
-{
-	if (nodeA < adjList.size() && nodeB < adjList.size())
+	for (size_t i = 0; i < verts; i++)
 	{
-		adjList[nodeA].vertices.push_back(nodeB);
+		addVertex();
 	}
 }
 
-const Graph::Node* const DirectedGraph::find(unsigned int node)
+size_t DirectedGraph::addVertex()
 {
-	if (node < adjList.size())
+	vertices[vertexCount] = std::list<size_t>();
+	vertexCount++;
+	return vertexCount - 1;
+}
+
+void DirectedGraph::addEdge(size_t vert1, size_t vert2)
+{
+	if (vertices.find(vert1) == vertices.end()) return;
+	if (vertices.find(vert2) == vertices.end()) return;
+
+	vertices[vert1].push_back(vert2);
+}
+
+void DirectedGraph::deleteEdge(size_t vert1, size_t vert2)
+{
+	if (vertices.find(vert1) == vertices.end()) return;
+	if (vertices.find(vert2) == vertices.end()) return;
+
+	for (auto i = vertices[vert1].begin(); i != vertices[vert1].end(); i++)
 	{
-		return &adjList[node];
+		if (*i == vert2)
+		{
+			vertices[vert1].erase(i);
+			break;
+		}
+	}
+
+}
+
+void DirectedGraph::deleteNode(size_t vert)
+{
+	if (vertices.find(vert) == vertices.end()) return;
+
+	vertices.erase(vert);
+
+	for (auto& kv : vertices)
+	{
+		for (auto i = kv.second.begin(); i != kv.second.end(); i++)
+		{
+			if (*i == vert)
+			{
+				kv.second.erase(i);
+				break;
+			}
+		}
 	}
 }
 
-void DirectedGraph::removeNode(unsigned int node)
+std::string DirectedGraph::toAdjListsString()
 {
-	// TODO
-}
-
-void DirectedGraph::removeEdge(unsigned int nodeA, unsigned int nodeB)
-{
-	if (nodeA < adjList.size() && nodeB < adjList.size())
+	std::string res;
+	for (const auto& kv : vertices)
 	{
-		adjList[nodeA].vertices.remove(nodeB);
+		res.append(std::to_string(kv.first) + "-> ");
+		for (const auto& v : kv.second)
+		{
+			res.append(std::to_string(v) + " ");
+		}
+		res.append("\n");
 	}
+	return res;
 }
 
-int UndirectedGraph::addNode(const char* data)
+std::string DirectedGraph::toAdjMatrixString()
 {
-	return 0;
+	std::string res;
+	for (const auto& kv : vertices)
+	{
+		for (size_t i = 0; i < this->vertexCount; i++)
+		{
+			if (std::find(kv.second.begin(), kv.second.end(), i) != kv.second.end())
+			{
+				res += "1 ";
+				continue;
+			}
+			res += "0 ";
+		}
+		res += '\n';
+	}
+	return res;
 }
 
-void UndirectedGraph::addEdge(unsigned int intA, unsigned int intB)
-{
-}
 
-const Graph::Node* const UndirectedGraph::find(unsigned int node)
-{
-	return nullptr;
-}
-
-void UndirectedGraph::removeNode(unsigned int node)
-{
-}
-
-void UndirectedGraph::removeEdge (unsigned int intA, unsigned int intB)
-{
-}

@@ -9,56 +9,60 @@
 #include <queue>
 #include <array>
 
-class MatrixView
-{
-	// TODO: Adjency matrix view
-};
+using uint = unsigned int;
 
 class Graph
 {
-protected:
-	Graph() = default;
-
-	struct Node
-	{
-		const char* data;
-		std::list<unsigned int> vertices;
-	};
-
-	std::vector<Node> adjList;
 public:
 	virtual ~Graph();
-	
-	virtual int addNode(const char* data) = 0;
-	virtual void addEdge(unsigned int nodeA, unsigned int nodeB) = 0;
-	virtual const Node* const find(unsigned int node) = 0;
-	virtual void removeNode(unsigned int node) = 0;
-	virtual void removeEdge(unsigned int nodeA, unsigned int nodeB) = 0;
 
-	std::list<unsigned int> bfs(unsigned int s);
+	virtual size_t addVertex() = 0;									// must return vertex id in data structure
+	virtual void addEdge(size_t vert1, size_t vert2) = 0;           // edge builds out of vertex id's
+	virtual void deleteEdge(size_t vert1, size_t vert2) = 0;
+	virtual void deleteNode(size_t vert) = 0;
 
-	// TODO: BFS, DFS
-};
-
-class DirectedGraph : public Graph
-{
-public:
-	DirectedGraph();
-	int addNode(const char* data) override;
-	void addEdge(unsigned int nodeA, unsigned int nodeB) override;
-	const Node* const find(unsigned int nod) override;
-	void removeNode(unsigned int node) override;
-	void removeEdge(unsigned int nodeA, unsigned int nodeB) override;
+	virtual std::string toAdjListsString() = 0;
+	virtual std::string toAdjMatrixString() = 0;
 };
 
 class UndirectedGraph : public Graph
 {
-	UndirectedGraph() = default;
-	int addNode(const char* data) override;
-	void addEdge(unsigned int nodeA, unsigned int nodeB) override;
-	const Node* const find(unsigned int nod) override;
-	void removeNode(unsigned int node) override;
-	void removeEdge(unsigned int intA, unsigned int intB) override;
+private:
+	size_t vertexCount;
+	std::map < size_t, std::list <size_t> > vertices;
+public:
+	UndirectedGraph();
+	UndirectedGraph(size_t verts);
+
+	// Inherited via Graph
+	size_t addVertex() override;
+	void addEdge(size_t vert1, size_t vert2) override;
+	void deleteEdge(size_t vert1, size_t vert2) override;
+	void deleteNode(size_t vert) override;
+
+	// Inherited via Graph
+	std::string toAdjListsString() override;
+	std::string toAdjMatrixString() override;
+};
+
+class DirectedGraph : public Graph
+{
+private:
+	size_t vertexCount;
+	std::map < size_t, std::list <size_t> > vertices;
+public:
+	DirectedGraph();
+	DirectedGraph(size_t verts);
+
+	// Inherited via Graph
+	size_t addVertex() override;
+	void addEdge(size_t vert1, size_t vert2) override;
+	void deleteEdge(size_t vert1, size_t vert2) override;
+	void deleteNode(size_t vert) override;
+
+	// Inherited via Graph
+	std::string toAdjListsString() override;
+	std::string toAdjMatrixString() override;
 };
 
 #endif
