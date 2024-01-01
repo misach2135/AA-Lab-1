@@ -7,6 +7,7 @@
 #include <set>
 #include <string>
 #include <queue>
+#include <random>
 #include <array>
 
 using uint = unsigned int;
@@ -43,6 +44,8 @@ public:
 	// Inherited via Graph
 	std::string toAdjListsString() override;
 	std::string toAdjMatrixString() override;
+
+	static UndirectedGraph generate(size_t n, double p);
 };
 
 class DirectedGraph : public Graph
@@ -63,6 +66,9 @@ public:
 	// Inherited via Graph
 	std::string toAdjListsString() override;
 	std::string toAdjMatrixString() override;
+
+	static DirectedGraph generate(size_t n, double p);
 };
+
 
 #endif

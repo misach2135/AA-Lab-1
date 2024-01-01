@@ -6,32 +6,11 @@ using uint = unsigned int;
 
 int main()
 {
-    UndirectedGraph g;
+    size_t n = 50;
+    double c = 5;
+    long double p = (c * log(n)) / n;
+    DirectedGraph g = DirectedGraph::generate(n, p);
 
-    uint node1 = g.addVertex();
-    uint node2 = g.addVertex();
-    uint node3 = g.addVertex();
-    uint node4 = g.addVertex();
-    uint node5 = g.addVertex();
-
-    g.addEdge(node1, node2);
-
-
-    std::cout << g.toAdjListsString() << std::endl;
-    std::cout << g.toAdjMatrixString() << std::endl;
-
-    g.deleteNode(node1);
-
-    std::cout << "\n\n";
-
-    std::cout << g.toAdjListsString() << std::endl;
-    std::cout << g.toAdjMatrixString() << std::endl;
-
-    g.deleteEdge(node2, node5);
-
-    std::cout << "\n\n";
-
-    std::cout << g.toAdjListsString() << std::endl;
     std::cout << g.toAdjMatrixString() << std::endl;
 
     return 0;

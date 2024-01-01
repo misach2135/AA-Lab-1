@@ -111,6 +111,43 @@ std::string UndirectedGraph::toAdjMatrixString()
 	return res;
 }
 
+UndirectedGraph UndirectedGraph::generate(size_t n, double p)
+{
+	UndirectedGraph g(n);
+	if (p <= 0)
+	{
+		return UndirectedGraph(n);
+	}
+	if (p >= 1)
+	{
+		for (size_t i = 0; i < n; i++)
+		{
+			for (size_t j = i + 1; j < n; j++)
+			{
+				g.addEdge(i, j);
+			}
+		}
+		return g;
+	}
+	
+	std::random_device dev;
+	std::mt19937 rng(dev());
+
+	for (size_t i = 0; i < n; i++)
+	{
+		for (size_t j = i + 1; j < n; j++)
+		{
+			if (std::uniform_real_distribution<double>(0, 1)(rng) < p)
+			{
+				g.addEdge(i, j);
+			}
+		}
+	}
+
+	return g;
+
+}
+
 DirectedGraph::DirectedGraph()
 {
 	vertexCount = 0;
@@ -208,4 +245,41 @@ std::string DirectedGraph::toAdjMatrixString()
 	return res;
 }
 
+DirectedGraph DirectedGraph::generate(size_t n, double p)
+{
+	DirectedGraph g(n);
+	if (p <= 0)
+	{
+		return DirectedGraph(n);
+	}
+	if (p >= 1)
+	{
+		for (size_t i = 0; i < n; i++)
+		{
+			for (size_t j = 0; j < n; j++)
+			{
+				if (i == j) continue;
+				g.addEdge(i, j);
+			}
+		}
+		return g;
+	}
 
+	std::random_device dev;
+	std::mt19937 rng(dev());
+
+	for (size_t i = 0; i < n; i++)
+	{
+		for (size_t j = 0; j < n; j++)
+		{
+			if (i == j) continue;
+
+			if (std::uniform_real_distribution<double>(0, 1)(rng) < p)
+			{
+				g.addEdge(i, j);
+			}
+		}
+	}
+
+	return g;
+}
