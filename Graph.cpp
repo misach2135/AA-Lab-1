@@ -6,18 +6,27 @@ IGraphOperations::~IGraphOperations()
 
 ListsGraph::ListsGraph()
 {
+
+}
+
+ListsGraph::ListsGraph(size_t verts) : GeneralAdjencyListsGraph(verts)
+{
+}
+
+GeneralAdjencyListsGraph::GeneralAdjencyListsGraph()
+{
 	vertices.clear();
 }
 
-ListsGraph::ListsGraph(size_t verts)
+GeneralAdjencyListsGraph::GeneralAdjencyListsGraph(size_t n)
 {
-	for (size_t i = 0; i < verts; i++)
+	for (size_t i = 0; i < n; i++)
 	{
 		addVertex();
 	}
 }
 
-size_t ListsGraph::addVertex()
+size_t GeneralAdjencyListsGraph::addVertex()
 {
 		vertices.push_back(Vertex());
 		return vertices.size() - 1;
@@ -28,8 +37,10 @@ void ListsGraph::addEdge(size_t vert1, size_t vert2)
 	if (vert1 >= vertices.size()) return;
 	if (vert2 >= vertices.size()) return;
 
-	vertices[vert1].neighbors.push_back(vert2);
-	vertices[vert2].neighbors.push_back(vert1);
+	if (std::find(vertices[vert1].neighbors.begin(), vertices[vert1].neighbors.end(), vert1) == vertices[vert1].neighbors.end()) 
+		vertices[vert1].neighbors.push_back(vert2);
+	if (std::find(vertices[vert2].neighbors.begin(), vertices[vert2].neighbors.end(), vert1) == vertices[vert2].neighbors.end()) 
+		vertices[vert2].neighbors.push_back(vert1);
 }
 
 void ListsGraph::deleteEdge(size_t vert1, size_t vert2)
@@ -56,44 +67,40 @@ void ListsGraph::deleteEdge(size_t vert1, size_t vert2)
 	}
 }
 
-void ListsGraph::deleteNode(size_t vert)
+void DListsGraph::dfsRecursive(size_t vert)
 {
-	if (vert >= vertices.size()) return;
+	vertices[vert].selected = true;
 
-	vertices.erase(vertices.begin() + vert);
-
-		// Remove the deleted vertex from neighbor lists and update indices
-	for (auto& v : vertices)
+	for (auto neighbor : vertices[vert].neighbors)
 	{
-		v.neighbors.remove(vert);
-
-		for (auto& neighbor : v.neighbors)
+		if (!vertices[neighbor].selected)
 		{
-			if (neighbor > vert)
-			{
-				neighbor--;
-			}
+			dfsRecursive(neighbor);
 		}
 	}
 }
 
-DListsGraph::DListsGraph()
+void DListsGraph::transpose()
 {
-	vertices.clear();
-}
+	std::vector<Vertex> transposedVertices(vertices.size());
 
-DListsGraph::DListsGraph(size_t verts)
-{
-	for (size_t i = 0; i < verts; i++)
+	for (size_t i = 0; i < vertices.size(); ++i)
 	{
-		addVertex();
+		for (auto neighbor : vertices[i].neighbors)
+		{
+			transposedVertices[neighbor].neighbors.push_back(i);
+		}
 	}
+
+	vertices = transposedVertices;
 }
 
-size_t DListsGraph::addVertex()
+DListsGraph::DListsGraph() : GeneralAdjencyListsGraph()
 {
-	vertices.push_back(Vertex());
-	return vertices.size() - 1;
+}
+
+DListsGraph::DListsGraph(size_t verts) : GeneralAdjencyListsGraph(verts)
+{
 }
 
 void DListsGraph::addEdge(size_t vert1, size_t vert2)
@@ -101,7 +108,8 @@ void DListsGraph::addEdge(size_t vert1, size_t vert2)
 	if (vert1 >= vertices.size()) return;
 	if (vert2 >= vertices.size()) return;
 
-	vertices[vert1].neighbors.push_back(vert2);
+	if (std::find(vertices[vert1].neighbors.begin(), vertices[vert1].neighbors.end(), vert1) == vertices[vert1].neighbors.end())
+		vertices[vert1].neighbors.push_back(vert2);
 }
 
 void DListsGraph::deleteEdge(size_t vert1, size_t vert2)
@@ -120,7 +128,14 @@ void DListsGraph::deleteEdge(size_t vert1, size_t vert2)
 
 }
 
-void DListsGraph::deleteNode(size_t vert)
+std::vector<std::vector<size_t>> DListsGraph::getStronglyConnectedComponents()
+{
+	std::vector<std::vector<size_t> > res;
+	return res;
+
+}
+
+void GeneralAdjencyListsGraph::deleteNode(size_t vert)
 {
 	if (vert >= vertices.size()) return;
 
@@ -140,6 +155,33 @@ void DListsGraph::deleteNode(size_t vert)
 		}
 	}
 
+}
+
+std::vector<size_t> GeneralAdjencyListsGraph::dfs(size_t vert)
+{
+	if (vert >= vertices.size()) return std::vector<size_t>();
+
+	for (auto& v : vertices) v.selected = false;
+
+	std::vector<size_t> res;
+	std::stack<size_t> visited;
+	vertices[vert].selected = true;
+	visited.push(vert);
+	while (!visited.empty())
+	{
+		size_t v = visited.top();
+		visited.pop();
+		res.push_back(v);
+		for (auto& neighbor : vertices[v].neighbors)
+		{
+			if (!vertices[neighbor].selected)
+			{
+				visited.push(neighbor);
+				vertices[neighbor].selected = true;
+			}
+		}
+	}
+	return res;
 }
 
 AdjencyListsGraphRepresentation::AdjencyListsGraphRepresentation()
@@ -186,14 +228,28 @@ std::string AdjencyListsGraphRepresentation::toAdjMatrixString()
 	return res;
 }
 
+AdjencyListsGraphRepresentation::Vertex::Vertex()
+{
+	neighbors = std::list<size_t>();
+	selected = false;
+}
+
 AdjencyMatrixGraphRepresentation::AdjencyMatrixGraphRepresentation()
 {
-	matrix = std::vector <std::vector<size_t>>(0);
+	matrix = std::vector <std::vector<bool>		>(0);
 }
 
 AdjencyMatrixGraphRepresentation::AdjencyMatrixGraphRepresentation(const std::vector<std::list<size_t>>& lists)
 {
 	// TODO
+}
+
+MatrixGraph::MatrixGraph() : GeneralMatrixGraph()
+{
+}
+
+MatrixGraph::MatrixGraph(size_t n) : GeneralMatrixGraph(n)
+{
 }
 
 std::string AdjencyMatrixGraphRepresentation::toAdjListsString()
@@ -206,41 +262,74 @@ std::string AdjencyMatrixGraphRepresentation::toAdjMatrixString()
 	return std::string();
 }
 
-size_t MatrixGraph::addVertex()
-{
-	return size_t();
-}
-
 void MatrixGraph::addEdge(size_t vert1, size_t vert2)
 {
+	if (vert1 >= matrix.size() && vert2 >= matrix.size())  return;
+
+	matrix[vert1][vert2] = 1;
+	matrix[vert2][vert1] = 1;
 }
 
 void MatrixGraph::deleteEdge(size_t vert1, size_t vert2)
 {
+	if (vert1 >= matrix.size() && vert2 >= matrix.size())  return;
+
+	matrix[vert1][vert2] = 0;
+	matrix[vert2][vert1] = 0;
 }
 
-void MatrixGraph::deleteNode(size_t vert)
+
+DMatrixGraph::DMatrixGraph() : GeneralMatrixGraph()
 {
 }
 
-size_t DMatrixGraph::addVertex()
+DMatrixGraph::DMatrixGraph(size_t n) : GeneralMatrixGraph(n)
 {
-	return size_t();
 }
 
 void DMatrixGraph::addEdge(size_t vert1, size_t vert2)
 {
+	if (vert1 >= matrix.size() && vert2 >= matrix.size())  return;
+
+	matrix[vert1][vert2] = 1;
 }
 
 void DMatrixGraph::deleteEdge(size_t vert1, size_t vert2)
 {
+	if (vert1 >= matrix.size() && vert2 >= matrix.size())  return;
+
+	matrix[vert1][vert2] = 0;
 }
 
-void DMatrixGraph::deleteNode(size_t vert)
+GeneralMatrixGraph::GeneralMatrixGraph()
 {
+	matrix = std::vector<std::vector<bool> >();
 }
 
-AdjencyListsGraphRepresentation::Vertex::Vertex()
+GeneralMatrixGraph::GeneralMatrixGraph(size_t n)
 {
-	neighbors = std::list<size_t>();
+	matrix = std::vector<std::vector<bool> >(n, std::vector<bool>(n, false));
+}
+
+size_t GeneralMatrixGraph::addVertex()
+{
+	matrix.push_back(std::vector<bool>());
+
+	for (auto& e : matrix)
+	{
+		e.push_back(0);
+	}
+
+	return matrix.size() - 1;
+}
+
+void GeneralMatrixGraph::deleteNode(size_t vert)
+{
+	if (vert >= matrix.size()) return;
+
+	matrix.erase(matrix.begin() + vert);
+	for (auto& row : matrix)
+	{
+		row.erase(row.begin() + vert);
+	}
 }

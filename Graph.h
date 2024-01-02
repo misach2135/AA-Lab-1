@@ -6,7 +6,7 @@
 #include <map>
 #include <set>
 #include <string>
-#include <queue>
+#include <stack>
 #include <type_traits>
 #include <random>
 #include <array>
@@ -22,8 +22,7 @@ public:
 	virtual void addEdge(size_t vert1, size_t vert2) = 0;           // edge builds out of vertex id's
 	virtual void deleteEdge(size_t vert1, size_t vert2) = 0;
 	virtual void deleteNode(size_t vert) = 0;
-	virtual void transpose() = 0; // Лекція 25
-	virtual std::vector<size_t> dfs(size_t vert) = 0; // DFSEnumeration = 24-1
+	virtual std::vector<size_t> dfs(size_t vert) = 0;
 };
 
 class IGraphRepresentation
@@ -37,6 +36,7 @@ class AdjencyListsGraphRepresentation : public IGraphRepresentation
 {
 protected:
 	struct Vertex {
+		bool selected = false;
 		std::list<size_t> neighbors;
 		Vertex();
 	};
@@ -54,7 +54,7 @@ public:
 class AdjencyMatrixGraphRepresentation : public IGraphRepresentation
 {
 protected:
-	std::vector <std::vector<size_t>> matrix;
+	std::vector <std::vector<bool>> matrix;
 public:
 	AdjencyMatrixGraphRepresentation();
 	AdjencyMatrixGraphRepresentation(const std::vector<std::list <size_t> >& lists);
@@ -64,50 +64,76 @@ public:
 	std::string toAdjMatrixString() override;
 };
 
-class ListsGraph : public IGraphOperations, public AdjencyListsGraphRepresentation
+class GeneralAdjencyListsGraph : public IGraphOperations, public AdjencyListsGraphRepresentation
+{
+protected:
+	GeneralAdjencyListsGraph();
+	GeneralAdjencyListsGraph(size_t n);
+public:
+	size_t addVertex() override;
+	std::vector<size_t> dfs(size_t vert) override;
+	void deleteNode(size_t vert) override;
+};
+
+
+class ListsGraph : public GeneralAdjencyListsGraph
 {
 public:
 	ListsGraph();
 	ListsGraph(size_t verts);
 
-	size_t addVertex() override;
 	void addEdge(size_t vert1, size_t vert2) override;
 	void deleteEdge(size_t vert1, size_t vert2) override;
-	void deleteNode(size_t vert) override;
+
+	// Inherited via IGraphOperations
 
 };
 
-class DListsGraph : public IGraphOperations, public AdjencyListsGraphRepresentation
+class DListsGraph : public GeneralAdjencyListsGraph
 {
+private:
+	void dfsRecursive(size_t vert);
+	void transpose();
 public:
 	DListsGraph();
 	DListsGraph(size_t verts);
 
-	size_t addVertex() override;
 	void addEdge(size_t vert1, size_t vert2) override;
 	void deleteEdge(size_t vert1, size_t vert2) override;
-	void deleteNode(size_t vert) override;
 
+	std::vector<std::vector<size_t>> getStronglyConnectedComponents();
 };
 
-class MatrixGraph : public IGraphOperations, public AdjencyMatrixGraphRepresentation
+class GeneralMatrixGraph : public IGraphOperations, public AdjencyMatrixGraphRepresentation
 {
+protected:
+	GeneralMatrixGraph();
+	GeneralMatrixGraph(size_t n);
 public:
-	// Inherited via IGraphOperations
 	size_t addVertex() override;
-	void addEdge(size_t vert1, size_t vert2) override;
-	void deleteEdge(size_t vert1, size_t vert2) override;
 	void deleteNode(size_t vert) override;
 };
 
-class DMatrixGraph : public IGraphOperations, public AdjencyMatrixGraphRepresentation
+class MatrixGraph : public GeneralMatrixGraph
 {
 public:
+	MatrixGraph();
+	MatrixGraph(size_t n);
+
 	// Inherited via IGraphOperations
-	size_t addVertex() override;
 	void addEdge(size_t vert1, size_t vert2) override;
 	void deleteEdge(size_t vert1, size_t vert2) override;
-	void deleteNode(size_t vert) override;
+	
+};
+
+class DMatrixGraph : public GeneralMatrixGraph
+{
+public:
+	DMatrixGraph();
+	DMatrixGraph(size_t n);
+	// Inherited via IGraphOperations
+	void addEdge(size_t vert1, size_t vert2) override;
+	void deleteEdge(size_t vert1, size_t vert2) override;
 };
 
 template<typename T>
@@ -135,14 +161,14 @@ T generateGraph(size_t n, long double p)
 
 	std::random_device dev;
 	std::mt19937 rng(dev());
-
+	std::bernoulli_distribution distribution(p);
 	for (size_t i = 0; i < n; i++)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
 			if (i == j) continue;
 
-			if (std::uniform_real_distribution<double>(0, 1)(rng) < p)
+			if (distribution(rng))
 			{
 				g.addEdge(i, j);
 			}
